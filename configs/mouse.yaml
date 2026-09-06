@@ -1,0 +1,136 @@
+# Mouse Embryo Development (E7.5 -> E12.5) Configuration
+
+experiment:
+  name: "mouse_embryo_e75_e125"
+  seed: 42
+  device: "cuda"
+
+# Data configuration
+data:
+  source_stage: "E7.5"
+  target_stage: "E12.5"
+  validation_stage: "E9.5"
+
+  # Data paths (update with your actual paths)
+  source_path: "data/mouse/E7.5_trimodal.h5ad"
+  target_path: "data/mouse/E12.5_spatial.h5ad"
+  validation_path: "data/mouse/E9.5_reference.h5ad"
+
+  # Modalities
+  modalities: ["RNA", "ATAC", "MET"]
+  
+  # Modality dimensions (update based on your data)
+  modality_dims:
+    RNA: 2000
+    ATAC: 50000
+    MET: 10000
+
+  # Preprocessing
+  normalize: true
+  log_transform: true
+  scale: true
+  highly_variable_genes: 2000
+
+# Model architecture
+model:
+  # CMAT Attention Encoder
+  encoder:
+    hidden_dim: 256
+    embedding_dim: 64
+    n_heads: 4
+    dropout: 0.15
+
+  # Trajectory Generator
+  generator:
+    hidden_dim: 1024
+    alpha: 0.0
+    
+    # Marker gene indices (update with your actual gene indices)
+    source_markers: [0, 5, 10]    # e.g., SOX2, NANOG, POU5F1
+    target_markers: [20, 25, 30]  # e.g., T, MESP1, MIXL1
+
+  # Spatial Encoder (if using spatial data)
+  spatial_encoder:
+    hidden_dim: 512
+    embedding_dim: 128
+    spatial_dim: 2
+
+# Training configuration
+training:
+  epochs: 50
+  batch_size: 256
+  samples_per_epoch: 1000
+  cells_per_sample: 24
+
+  # Optimizer
+  learning_rate: 0.0005
+  weight_decay: 0.00001
+  gradient_clip_norm: 1.0
+
+  # Learning rate scheduler
+  scheduler: "CosineAnnealingLR"
+  scheduler_t_max: 50
+  scheduler_eta_min: 0.000001
+
+  # Loss configuration
+  loss:
+    # Lineage alignment loss
+    temperature: 0.15
+    positive_threshold: 0.25
+    
+    # Trajectory generator loss weights
+    weight_recon: 1.0
+    weight_pearson: 300.0
+    weight_mono: 120.0
+    weight_gate: 0.01
+
+  # Checkpointing
+  checkpoint_dir: "checkpoints/mouse"
+  save_interval: 10
+
+# Sampling configuration
+sampling:
+  positive_sampling_probability: 0.80
+  min_positive_fraction: 0.40
+
+# Lineage correspondence
+lineage:
+  # Prior correspondence matrix configuration
+  minimum_score: 0.10
+  base_score: 0.85
+  pseudotime_distance_weight: 0.80
+
+# Validation
+validation:
+  # E9.5 intermediate validation
+  expected_pseudotime: 0.4
+  pseudotime_tolerance: 0.1
+
+  # Marker genes for lineages
+  markers:
+    mesoderm: ["T", "MESP1", "MIXL1"]
+    endoderm: ["SOX17", "FOXA2", "GATA4"]
+    ectoderm: ["SOX1", "PAX6", "NES"]
+
+  # Evaluation metrics
+  compute_metrics:
+    - "pearson_correlation"
+    - "marker_direction_concordance"
+    - "temporal_localization"
+    - "trajectory_smoothness"
+
+# Output configuration
+output:
+  results_dir: "results/mouse"
+  
+  # What to save
+  save_model: true
+  save_embeddings: true
+  save_trajectories: true
+  save_attention_weights: true
+
+  # Visualization
+  plot_umap: true
+  plot_trajectories: true
+  plot_marker_expression: true
+  plot_pseudotime: true

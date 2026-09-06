@@ -1,0 +1,114 @@
+# Human Oocyte Maturation (FGO -> MII) Configuration
+
+experiment:
+  name: "human_oocyte_fgo_mii"
+  seed: 42
+  device: "cuda"
+
+# Data configuration
+data:
+  source_stage: "FGO"
+  target_stage: "MII"
+  validation_stages: ["GO1", "GO2", "MI"]
+
+  # Data paths (update with your actual paths)
+  source_path: "data/human/FGO_trimodal.h5ad"
+  target_path: "data/human/MII_trimodal.h5ad"
+  validation_path: "data/human/intermediate_stages.h5ad"
+
+  # Modalities
+  modalities: ["RNA", "ATAC", "MET"]
+
+  # PCA dimensions for dimensionality reduction
+  preprocessing:
+    rna_pca_dim: 50
+    atac_pca_dim: 100
+    met_pca_dim: 50
+
+# Model architecture
+model:
+  # CMAT Attention Encoder
+  encoder:
+    hidden_dim: 256
+    embedding_dim: 64
+    n_heads: 4
+
+  # Dropout rates
+  dropout:
+    modality_encoder: 0.15
+    attention: 0.10
+    projection: 0.10
+
+# Training configuration
+training:
+  epochs: 50
+  batch_size: 128
+
+  # Optimizer
+  learning_rate: 0.0005
+  weight_decay: 0.00001
+  gradient_clip_norm: 1.0
+
+  # Learning rate scheduler
+  scheduler: "CosineAnnealingLR"
+  scheduler_t_max: 50
+  scheduler_eta_min: 0.000001
+
+  # Loss configuration
+  loss:
+    temperature: 0.15
+
+  # Checkpointing
+  checkpoint_dir: "checkpoints/human"
+  save_interval: 10
+
+# Sampling configuration
+sampling:
+  samples_per_epoch: 1000
+  cells_per_sample: 24
+
+  positive_threshold: 0.25
+  positive_sampling_probability: 0.80
+  min_positive_fraction: 0.40
+
+# Lineage correspondence
+lineage:
+  minimum_score: 0.10
+  base_score: 0.85
+  pseudotime_distance_weight: 0.80
+
+# Validation
+validation:
+  # Intermediate stage validation
+  stages:
+    GO1:
+      expected_pseudotime: 0.25
+      key_events: ["DNA_methylation_divergence"]
+    GO2:
+      expected_pseudotime: 0.50
+      key_events: ["chromatin_accessibility_divergence"]
+    MI:
+      expected_pseudotime: 0.75
+
+  # Evaluation metrics
+  compute_metrics:
+    - "endpoint_correlation"
+    - "intermediate_localization"
+    - "modality_divergence_timing"
+
+# Output configuration
+output:
+  results_dir: "results/human"
+  
+  # What to save
+  save_model: true
+  save_embeddings: true
+  save_trajectories: true
+  save_attention_weights: true
+  save_biology_evidence: true
+
+  # Visualization
+  plot_umap: true
+  plot_trajectories: true
+  plot_modality_divergence: true
+  plot_candidate_regions: true
