@@ -103,8 +103,8 @@ python run_mouse_experiment.py
 
 ### Human Oocyte Maturation
 
-**Dataset**: scChaRM-seq (Zhu et al., *Cell Stem Cell* 2023)  
-**GEO**: [GSE206520](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE206520)
+**Dataset**: scChaRM-seq (Yan et al., *Cell Stem Cell*, 2021)
+**GEO**: [GSE154762](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE154762)
 
 ```bash
 mkdir -p data/human
@@ -247,4 +247,4 @@ We thank the authors of the following datasets for making their data publicly av
 - Argelaguet et al. (2019) - Mouse scNMT-seq data
 - Cao et al. (2019) - Mouse sci-RNA-seq3 data  
 - Chen et al. (2022) - Mouse Stereo-seq data
-- Zhu et al. (2023) - Human scChaRM-seq data
+- Yan et al. (2021) - Human scChaRM-seq data
