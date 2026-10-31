@@ -1,250 +1,132 @@
 # CMAT: Cross-Modal Attention Framework for Multimodal Developmental Trajectory Inference
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
-[![PyTorch](https://img.shields.io/badge/PyTorch-1.10+-ee4c2c.svg)](https://pytorch.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Official implementation of **CMAT** for reconstructing continuous molecular-state trajectories from discrete single-cell observations across incompatible measurement platforms.
+Research code associated with the CMAT manuscript.
 
-> **Yongbo Guo¹, Yang Gao¹, Fangyuan Shi²,³**  
-> ¹ School of Information Engineering, Ningxia University, Yinchuan 750021, China  
-> ² School of Medical Technology, North Minzu University, Yinchuan 750021, China  
-> ³ Key Laboratory of Fertility Preservation and Maintenance of Ministry of Education, Ningxia Medical University  
-> *Correspondence: shifangyuan@nun.edu.cn*
+**Authors:** Yong-Bo Guo¹, Yang Gao², Yu-Jian Kang³, Fang-Yuan Shi¹˒⁴˒⁵*
 
----
+1. School of Information Engineering, Ningxia University, Yinchuan, Ningxia 750021, China.
+2. School of Medical Technology, North Minzu University, Yinchuan, Ningxia 750021, China.
+3. Chongqing Key Laboratory of Intelligent Oncology for Breast Cancer, Cancer Hospital, School of Medicine, Chongqing University, Chongqing 400030, China.
+4. Collaborative Innovation Center for Ningxia Big Data and Artificial Intelligence Co-founded by Ningxia Municipality and Ministry of Education, Ningxia University, Yinchuan, Ningxia 750021, China.
+5. Ningxia Key Laboratory of Artificial Intelligence and Information Security for Channeling Computing Resources from the East to the West, Ningxia University, Yinchuan, Ningxia 750021, China.
+
+**Correspondence:** Fang-Yuan Shi, [shify@nxu.edu.cn](mailto:shify@nxu.edu.cn).
 
 ## Overview
 
-CMAT addresses the challenge of **reconstructing developmental trajectories when different stages are measured on incompatible platforms** (e.g., scNMT-seq at early stage, spatial transcriptomics at late stage). Traditional methods fail when molecular modalities differ between endpoints.
+CMAT reconstructs molecular-state trajectories between sparsely sampled developmental stages with partially shared measurement modalities. The framework described in the manuscript combines modality-specific encoders, adaptive cross-modal attention, developmentally informed endpoint correspondence, and endpoint-conditioned residual generation.
 
-### Key Innovation
+The manuscript evaluates mouse embryogenesis and human oocyte maturation. The principal mouse analysis links trimodal E7.5 cells to an E12.5 spatial RNA reference and evaluates reconstructed RNA states against independently observed E9.5 populations. Human analyses distinguish endpoint-only RNA reconstruction from stage-calibrated epigenomic reconstruction, including held-out-cell and leave-one-stage-out evaluations.
 
-1. **Cross-modal attention** - Adaptively integrates RNA, chromatin accessibility, and DNA methylation based on cell state
-2. **Developmentally-informed alignment** - Learns source-target cell correspondence under lineage constraints
-3. **Endpoint-conditioned generation** - Reconstructs continuous molecular states between matched cell pairs
+In the scNMT-seq and scChaRM-seq datasets, accessibility is inferred from GpC methyltransferase labeling. The label `ATAC` in the scripts denotes the accessibility modality.
 
-### Results
-
-**Mouse Embryogenesis (E7.5 → E12.5)**
-- E9.5 validation: Pearson correlation **0.85** for held-out intermediate stage
-- Marker directionality: **89%** recovery (vs. 68% baseline)
-
-**Human Oocyte Maturation (FGO → MII)**
-- Temporal alignment: **13.2%** error for GO1/GO2/MI validation
-- Revealed **modality-specific epigenomic remodeling**:
-  - DNA methylation peaks at GO1 (38% deviation)
-  - Chromatin accessibility peaks at GO2 (42% deviation)
-  - RNA expression remains stable (<15%)
-
----
-
-## Installation
-
-### Quick Setup
+## Source code
 
 ```bash
-# Clone repository
-git clone https://github.com/yourusername/CMAT.git
+git clone https://github.com/Guoyb29/CMAT.git
 cd CMAT
-
-# Create conda environment
-conda env create -f environment.yml
-conda activate cmat
-
-# Install package
-pip install -e .
+git rev-parse HEAD
 ```
 
-### Requirements
+Source files can also be downloaded using **Code > Download ZIP**. Record the commit identifier used for each analysis.
 
-- Python ≥ 3.8
-- PyTorch ≥ 1.10
-- CUDA ≥ 11.0 (recommended)
+## Software environment
 
----
+The manuscript reports the following environment for the principal Python analyses:
 
-## Quick Start
+| Software | Version |
+| --- | --- |
+| Python | 3.10.19 |
+| PyTorch | 2.9.1 |
+| CUDA | 12.8 |
+| NumPy | 2.2.6 |
+| pandas | 2.3.3 |
+| SciPy | 1.15.3 |
+| scikit-learn | 1.7.2 |
+| Scanpy | 1.11.5 |
+| AnnData | 0.11.4 |
+| statsmodels | 0.14.5 |
 
-### Human Oocyte Maturation (FGO → MII)
+Plotting and configuration utilities additionally use matplotlib, seaborn, umap-learn, and PyYAML. Separate environments for optimal-transport and Monocle 3 analyses are described in the supplementary methods.
 
-```bash
-# Download data (see Data Preparation below)
-mkdir -p data/human
-# Place scChaRM_FGO_MII.h5ad, GO1_cells.h5ad, GO2_cells.h5ad, MI_cells.h5ad in data/human/
+## Data sources
 
-# Run complete pipeline
-python run_human_experiment.py
+All experimental datasets used in the study were previously published.
 
-# Outputs:
-# - results/human/alignment/          # Trained model & embeddings
-# - results/human/trajectories/       # FGO→MII trajectories
-# - results/human/validation/         # GO1/GO2/MI validation
-# - results/human/validation/biology_report/  # Figure 6e analysis
-```
+| Analysis | Dataset source | Accession |
+| --- | --- | --- |
+| Mouse E7.5 multimodal endpoint | Argelaguet et al., Nature, 2019 | [GSE121708](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE121708) |
+| Mouse E12.5 spatial endpoint | Chen et al., Cell, 2022 | STOmicsDB: `STDS0000058`; `CNP0001543` |
+| Mouse E9.5 reference and E9.5–E13.5 analysis | Cao et al., Nature, 2019 | [GSE119945](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE119945) |
+| Mouse E6.5–E8.5 analysis | Pijuan-Sala et al., Nature, 2019 | ArrayExpress: `E-MTAB-6967` |
+| Human oocyte maturation, scChaRM-seq | Yan et al., Cell Stem Cell, 2021 | [GSE154762](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE154762) |
 
-### Mouse Embryo Development (E7.5 → E12.5)
+The human scChaRM-seq reference is:
 
-```bash
-# Download data
-bash scripts/download_mouse_data.sh
+Yan, R. et al. **Decoding dynamic epigenetic landscapes in human oocytes using single-cell multi-omics sequencing.** Cell Stem Cell 28, 1641–1656.e7 (2021).
 
-# Run complete pipeline
-python run_mouse_experiment.py
+## Data preparation
 
-# Outputs:
-# - results/mouse/trajectories/  # 4 developmental paths (Epiblast→Brain, etc.)
-# - results/mouse/validation/    # E9.5 intermediate validation
-```
+The experiment scripts use preprocessed `.h5ad` files. Preparation includes stage and cell-type annotation, alignment of RNA features by gene identity, and modality-specific processing of accessibility and methylation features. The manuscript uses 100-kb genomic regions for the human epigenomic analyses.
 
----
+Cell identifiers and feature ordering must remain consistent across expression matrices, embeddings, and matched endpoint pairs. Preprocessing and calibration must use only observations permitted by each training and validation design.
 
-## Data Preparation
+The original data repositories provide the published datasets; analysis-ready files require the preprocessing described in the manuscript and supplementary methods.
 
-### Human Oocyte Maturation
+## Repository layout
 
-**Dataset**: scChaRM-seq (Yan et al., *Cell Stem Cell*, 2021)
-**GEO**: [GSE154762](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE154762)
+| Path | Contents or intended role |
+| --- | --- |
+| `models/` | Modality encoders, cross-modal attention, spatial encoder, trajectory generator, and losses |
+| `preprocessing/` | Preprocessing utilities and paired multimodal sampling |
+| `experiments/human_FGO_MII/train.py` | Human endpoint representation training |
+| `experiments/human_FGO_MII/generate_trajectories.py` | Human RNA trajectory generation |
+| `experiments/human_FGO_MII/validate_endpoint.py` | GO1, GO2, and MI intermediate-stage evaluation |
+| `experiments/human_FGO_MII/biology_evidence_analysis.py` | Report generation from precomputed biological-analysis tables |
+| `experiments/mouse_development/train.py` | Mouse endpoint representation training |
+| `experiments/mouse_development/generate_trajectories.py` | Mouse lineage-restricted trajectory generation |
+| `experiments/mouse_development/validate_e95.py` | E9.5 intermediate-stage evaluation |
+| `evaluation/` | Molecular and temporal evaluation utilities |
+| `visualization/` | Embedding and trajectory plotting utilities |
+| `configs/` | Human and mouse configuration files |
+| `run_human_experiment.py`, `run_mouse_experiment.py` | Top-level workflow scripts |
+| `download_mouse_data.sh` | Mouse data download helper |
 
-```bash
-mkdir -p data/human
-# Download and convert to h5ad format:
-# - scChaRM_FGO_MII.h5ad (training: FGO + MII cells)
-# - GO1_cells.h5ad, GO2_cells.h5ad, MI_cells.h5ad (validation)
-```
+## Execution and release scope
 
-### Mouse Embryo Development
+The current public snapshot requires corrections to workflow integration and evaluation before end-to-end reproduction of the manuscript. Run instructions should be tied to a tested code version, its processed inputs, and the corresponding configurations.
 
-**Datasets**:
-- E7.5 trimodal: [GSE121708](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE121708) (Argelaguet et al., *Nature* 2019)
-- E9.5 validation: [GSE119945](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE119945) (Cao et al., *Nature* 2019)
-- E12.5 spatial: [STDS0000058](https://db.cngb.org/stomics/datasets/STDS0000058) (Chen et al., *Cell* 2022)
+The archived `v1.0.0` code snapshot is available at [https://doi.org/10.5281/zenodo.22546359](https://doi.org/10.5281/zenodo.22546359). This archive contains source code, configurations, and documentation; it does not contain separate processed matrices, model checkpoints, or complete manuscript result tables.
 
-```bash
-bash scripts/download_mouse_data.sh
-# Or manually download and place in data/mouse/
-```
-
----
-
-## Project Structure
-
-```
-CMAT/
-├── models/
-│   ├── cmat.py                  # Cross-modal attention encoder
-│   ├── trajectory_generator.py  # Gated residual generator
-│   └── losses.py               # Contrastive + boundary + smoothness losses
-├── experiments/
-│   ├── human_FGO_MII/
-│   │   ├── train_alignment.py          # Step 1: Learn embeddings
-│   │   ├── generate_trajectory.py      # Step 2: Generate trajectories
-│   │   ├── validate_endpoint.py        # Step 3: Validate GO1/GO2/MI
-│   │   └── biology_evidence_analysis.py # Step 4: Figure 6e analysis
-│   └── mouse_e75_e125/
-│       ├── train_alignment.py
-│       ├── generate_trajectory.py
-│       └── validate_e95.py
-├── evaluation/
-│   ├── metrics.py              # Pearson, Spearman, cosine, etc.
-│   └── temporal_alignment.py   # Temporal error & smoothness
-├── preprocessing/
-│   └── preprocess.py           # Data normalization & QC
-├── configs/
-│   ├── human.yaml              # Human experiment config
-│   └── mouse.yaml              # Mouse experiment config
-├── run_human_experiment.py     # One-click human pipeline
-├── run_mouse_experiment.py     # One-click mouse pipeline
-└── README.md
-```
-
----
-
-## Reproducing Paper Figures
-
-### Main Results
-
-| Figure | Description | Command |
-|--------|-------------|----------|
-| **Figure 2** | Mouse trajectories (4 lineages) | `python run_mouse_experiment.py` |
-| **Figure 3** | E9.5 validation | Included in mouse pipeline output |
-| **Figure 5** | Human FGO→MII trajectories | `python run_human_experiment.py` |
-| **Figure 6e** | Modality-specific deviations | Included in human pipeline output |
-
-### Detailed Execution
-
-For step-by-step manual execution, see individual scripts in `experiments/`:
-
-```bash
-# Human experiment (manual steps)
-python experiments/human_FGO_MII/train_alignment.py --trajectory-h5ad data/human/scChaRM_FGO_MII.h5ad --output-dir results/human/alignment
-python experiments/human_FGO_MII/generate_trajectory.py --input-h5ad data/human/scChaRM_FGO_MII.h5ad --output-dir results/human/trajectories
-python experiments/human_FGO_MII/validate_endpoint.py --trajectory results/human/trajectories/FGO_to_MII_trajectories.h5ad --output-dir results/human/validation
-python experiments/human_FGO_MII/biology_evidence_analysis.py --out results/human/validation
-
-# Mouse experiment (manual steps)
-python experiments/mouse_e75_e125/train_alignment.py --e75-path data/mouse/E75_scNMT.h5ad --e125-path data/mouse/E125_spatial.h5ad --output-dir results/mouse/alignment
-python experiments/mouse_e75_e125/generate_trajectory.py --embedding-dir results/mouse/alignment --output-dir results/mouse/trajectories
-python experiments/mouse_e75_e125/validate_e95.py --trajectory results/mouse/trajectories/Epiblast_to_Brain_trajectory_s120.h5ad --output-dir results/mouse/validation
-```
-
----
-
-## Method Overview
-
-**Stage 1: Multimodal Integration**
-- Cross-modal attention fuses RNA/ATAC/Methylation → unified cell embeddings
-
-**Stage 2: Developmentally-Informed Alignment**
-- Contrastive learning with lineage constraints → source-target cell pairs
-
-**Stage 3: Trajectory Generation**
-- Gated residual generator with boundary conditions → continuous pseudotime states
-
-**Validation**
-- Feature-level: Pearson/Spearman correlation with held-out stages
-- Latent-level: Euclidean distance, Wasserstein distance
-- Temporal: Pseudotime alignment error, developmental ordering
-
-For detailed methodology and pseudocode, see the paper.
-
----
+GitHub updates do not automatically replace this version-specific archive. Identify the code commit and archive version used when reporting an analysis.
 
 ## Citation
 
-If you use CMAT in your research, please cite:
+The manuscript is unpublished.
 
 ```bibtex
-@article{guo2026cmat,
+@unpublished{guo2026cmat,
   title={CMAT: Cross-Modal Attention Framework for Multimodal Developmental Trajectory Inference},
-  author={Guo, Yongbo and Gao, Yang and Shi, Fangyuan},
-  journal={Nature Computational Science},
+  author={Guo, Yong-Bo and Gao, Yang and Kang, Yu-Jian and Shi, Fang-Yuan},
   year={2026},
-  note={In submission}
+  note={Unpublished manuscript}
 }
 ```
 
----
+The Zenodo DOI identifies the archived code snapshot.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
+Source code is distributed under the [MIT License](LICENSE). Refer to the original dataset records for data access and reuse conditions.
 
 ## Contact
 
-- **Yongbo Guo**: guoyongbo@nxu.edu.cn (First author)
-- **Fangyuan Shi**: shifangyuan@nun.edu.cn (Corresponding author)
-
-**Issues**: Please report bugs or feature requests via [GitHub Issues](https://github.com/yourusername/CMAT/issues).
-
----
+- **Corresponding author:** Fang-Yuan Shi, [shify@nxu.edu.cn](mailto:shify@nxu.edu.cn)
+- **First author:** Yong-Bo Guo, [12025130913@stu.nxu.edu.cn](mailto:12025130913@stu.nxu.edu.cn)
+- **Code issues:** [GitHub Issues](https://github.com/Guoyb29/CMAT/issues)
 
 ## Acknowledgments
 
-We thank the authors of the following datasets for making their data publicly available:
-- Argelaguet et al. (2019) - Mouse scNMT-seq data
-- Cao et al. (2019) - Mouse sci-RNA-seq3 data  
-- Chen et al. (2022) - Mouse Stereo-seq data
-- Yan et al. (2021) - Human scChaRM-seq data
+We thank the researchers who generated and publicly shared the datasets used in this study, including Argelaguet et al. (2019), Cao et al. (2019), Chen et al. (2022), Pijuan-Sala et al. (2019), and Yan et al. (2021).
