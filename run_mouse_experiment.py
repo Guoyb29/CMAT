@@ -1,35 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Quick start script for mouse embryo development experiment (E7.5 -> E12.5).
-
-This script runs the complete CMAT pipeline for mouse embryo development.
-
-Usage:
-    python run_mouse_experiment.py
-"""
-
-import subprocess
-import sys
-from pathlib import Path
-
-import yaml
-
-
-def run_command(cmd, description):
-    """Run a shell command and handle errors."""
-    print(f"\n{'='*80}")
-    print(f"{description}")
-    print(f"{'='*80}")
-    print(f"Command: {' '.join(cmd)}\n")
-    
-    result = subprocess.run(
-        cmd, cwd=Path(__file__).resolve().parent, capture_output=False, text=True
-    )
-    
-    if result.returncode != 0:
-        print(f"\n? Error: {description} failed!")
-        sys.exit(1)
     
     print(f"\n? {description} completed successfully.")
     return result
@@ -94,3 +62,60 @@ def main():
             "--e75_path", str(e75_path),
             "--e125_path", str(e125_path),
             "--embedding_dir", str(embedding_dir),
+            "--output_dir", str(trajectory_dir),
+            "--n_epochs", "500",
+            "--n_steps", "120",
+            "--seed", "120",
+        ],
+        "[2/4] Generating 4 developmental trajectories"
+    )
+
+    # Step 3: Validate against E9.5
+    # Validate Brain trajectory
+    brain_trajectory = trajectory_dir / "Epiblast_to_Brain_trajectory_s120.h5ad"
+    
+    run_command(
+        [
+            sys.executable,
+            "-m", "experiments.mouse_development.validate_e95",
+            "--trajectory", str(brain_trajectory),
+            "--e95", str(e95_path),
+            "--output-dir", str(validation_dir / "e95_brain"),
+            "--expected-pseudotime", "0.5",
+        ],
+        "[3/4] Validating against E9.5 intermediate stage"
+    )
+
+    # Step 4: Temporal alignment metrics
+    metrics_dir = output_dir / "temporal_metrics"
+    metrics_dir.mkdir(exist_ok=True)
+    
+    run_command(
+        [
+            sys.executable,
+            "-m", "evaluation.temporal_alignment",
+            "--trajectory-files", f"CMAT:{brain_trajectory}",
+            "--output-dir", str(metrics_dir),
+        ],
+        "[4/4] Computing temporal alignment metrics"
+    )
+
+    # Summary
+    print("\n" + "=" * 80)
+    print("? EXPERIMENT COMPLETED SUCCESSFULLY")
+    print("=" * 80)
+    print(f"\nResults directory: {output_dir}")
+    print("\nKey outputs:")
+    print(f"  ? Trained model: {alignment_dir}/")
+    print(f"  ? Trajectories: {trajectory_dir}/")
+    print(f"    - Epiblast_to_Brain_trajectory_s120.h5ad")
+    print(f"    - Nascent_mesoderm_to_Heart_trajectory_s120.h5ad")
+    print(f"    - ExE_endoderm_to_Liver_trajectory_s120.h5ad")
+    print(f"    - Mesenchyme_to_Cartilage_trajectory_s120.h5ad")
+    print(f"  ? E9.5 validation: {validation_dir}/")
+    print(f"  ? Metrics: {metrics_dir}/")
+    print("\n" + "=" * 80)
+
+
+if __name__ == "__main__":
+    main()
