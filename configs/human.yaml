@@ -12,6 +12,11 @@ data:
   validation_stages: ["GO1", "GO2", "MI"]
 
   # Data paths (update with your actual paths)
+  # The current trainer/generator read both endpoint stages from one file.
+  trajectory_h5ad: "data/human/scChaRM_FGO_MII.h5ad"
+  go1_path: "data/human/GO1_cells.h5ad"
+  go2_path: "data/human/GO2_cells.h5ad"
+  mi_path: "data/human/MI_cells.h5ad"
   source_path: "data/human/FGO_trimodal.h5ad"
   target_path: "data/human/MII_trimodal.h5ad"
   validation_path: "data/human/intermediate_stages.h5ad"
