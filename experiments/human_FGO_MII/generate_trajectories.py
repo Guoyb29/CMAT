@@ -337,6 +337,11 @@ def main():
         'trajectory_id': np.repeat(np.arange(n_pairs), n_steps),
         'trajectory_step': np.tile(np.arange(n_steps), n_pairs),
         'pseudotime': np.tile(np.linspace(0, 1, n_steps), n_pairs),
+        'stage': np.tile(
+            np.where(np.arange(n_steps) == 0, 'FGO',
+                     np.where(np.arange(n_steps) == n_steps - 1, 'MII', 'generated')),
+            n_pairs,
+        ),
         'path': 'FGO_to_MII',
         'stage_from': 'FGO',
         'stage_to': 'MII',
