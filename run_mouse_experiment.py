@@ -23,7 +23,9 @@ def run_command(cmd, description):
     print(f"{'='*80}")
     print(f"Command: {' '.join(cmd)}\n")
     
-    result = subprocess.run(cmd, capture_output=False, text=True)
+    result = subprocess.run(
+        cmd, cwd=Path(__file__).resolve().parent, capture_output=False, text=True
+    )
     
     if result.returncode != 0:
         print(f"\n? Error: {description} failed!")
@@ -39,7 +41,7 @@ def main():
     print("=" * 80)
 
     # Project paths
-    project_root = Path(__file__).parent
+    project_root = Path(__file__).resolve().parent
     config_path = project_root / "configs" / "mouse.yaml"
     
     if not config_path.exists():
@@ -51,7 +53,10 @@ def main():
         config = yaml.safe_load(f)
 
     # Output directories
-    output_dir = Path(config.get('output', {}).get('save_dir', './results/mouse'))
+    output_config = config.get('output', {})
+    output_dir = Path(output_config.get('save_dir', output_config.get('results_dir', './results/mouse')))
+    if not output_dir.is_absolute():
+        output_dir = project_root / output_dir
     alignment_dir = output_dir / "alignment"
     trajectory_dir = output_dir / "trajectories"
     validation_dir = output_dir / "validation"
@@ -69,7 +74,7 @@ def main():
     run_command(
         [
             sys.executable,
-            "experiments/mouse_e75_e125/train_alignment.py",
+            "-m", "experiments.mouse_development.train",
             "--e75_path", str(e75_path),
             "--e125_path", str(e125_path),
             "--output_dir", str(alignment_dir),
@@ -85,66 +90,7 @@ def main():
     run_command(
         [
             sys.executable,
-            "experiments/mouse_e75_e125/generate_trajectory.py",
+            "-m", "experiments.mouse_development.generate_trajectories",
             "--e75_path", str(e75_path),
             "--e125_path", str(e125_path),
             "--embedding_dir", str(embedding_dir),
-            "--output_dir", str(trajectory_dir),
-            "--n_epochs", "500",
-            "--n_steps", "120",
-            "--seed", "120",
-        ],
-        "[2/4] Generating 4 developmental trajectories"
-    )
-
-    # Step 3: Validate against E9.5
-    # Validate Brain trajectory
-    brain_trajectory = trajectory_dir / "Epiblast_to_Brain_trajectory_s120.h5ad"
-    
-    run_command(
-        [
-            sys.executable,
-            "experiments/mouse_e75_e125/validate_e95.py",
-            "--trajectory", str(brain_trajectory),
-            "--e95", str(e95_path),
-            "--output-dir", str(validation_dir / "e95_brain"),
-            "--expected-pseudotime", "0.5",
-        ],
-        "[3/4] Validating against E9.5 intermediate stage"
-    )
-
-    # Step 4: Temporal alignment metrics
-    metrics_dir = output_dir / "temporal_metrics"
-    metrics_dir.mkdir(exist_ok=True)
-    
-    run_command(
-        [
-            sys.executable,
-            "evaluation/temporal_alignment.py",
-            "--trajectory", str(brain_trajectory),
-            "--reference-early", str(e75_path),
-            "--reference-late", str(e125_path),
-            "--output-dir", str(metrics_dir),
-        ],
-        "[4/4] Computing temporal alignment metrics"
-    )
-
-    # Summary
-    print("\n" + "=" * 80)
-    print("? EXPERIMENT COMPLETED SUCCESSFULLY")
-    print("=" * 80)
-    print(f"\nResults directory: {output_dir}")
-    print("\nKey outputs:")
-    print(f"  ? Trained model: {alignment_dir}/")
-    print(f"  ? Trajectories: {trajectory_dir}/")
-    print(f"    - Epiblast_to_Brain_trajectory_s120.h5ad")
-    print(f"    - Nascent_mesoderm_to_Heart_trajectory_s120.h5ad")
-    print(f"    - ExE_endoderm_to_Liver_trajectory_s120.h5ad")
-    print(f"    - Mesenchyme_to_Cartilage_trajectory_s120.h5ad")
-    print(f"  ? E9.5 validation: {validation_dir}/")
-    print(f"  ? Metrics: {metrics_dir}/")
-    print("\n" + "=" * 80)
-
-
-if __name__ == "__main__":
-    main()
