@@ -1,3 +1,35 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Quick start script for mouse embryo development experiment (E7.5 -> E12.5).
+
+This script runs the complete CMAT pipeline for mouse embryo development.
+
+Usage:
+    python run_mouse_experiment.py
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+import yaml
+
+
+def run_command(cmd, description):
+    """Run a shell command and handle errors."""
+    print(f"\n{'='*80}")
+    print(f"{description}")
+    print(f"{'='*80}")
+    print(f"Command: {' '.join(cmd)}\n")
+    
+    result = subprocess.run(
+        cmd, cwd=Path(__file__).resolve().parent, capture_output=False, text=True
+    )
+    
+    if result.returncode != 0:
+        print(f"\n? Error: {description} failed!")
+        sys.exit(1)
     
     print(f"\n? {description} completed successfully.")
     return result
