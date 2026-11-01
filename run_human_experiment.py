@@ -1,3 +1,35 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Quick start script for human oocyte maturation experiment (FGO -> MII).
+
+This script runs the complete CMAT pipeline for human oocyte maturation.
+
+Usage:
+    python run_human_experiment.py
+"""
+
+import subprocess
+import sys
+from pathlib import Path
+
+import yaml
+
+
+def run_command(cmd, description):
+    """Run a shell command and handle errors."""
+    print(f"\n{'='*80}")
+    print(f"{description}")
+    print(f"{'='*80}")
+    print(f"Command: {' '.join(cmd)}\n")
+    
+    result = subprocess.run(
+        cmd, cwd=Path(__file__).resolve().parent, capture_output=False, text=True
+    )
+    
+    if result.returncode != 0:
+        print(f"\n? Error: {description} failed!")
+        sys.exit(1)
     
     print(f"\n? {description} completed successfully.")
     return result
@@ -126,3 +158,9 @@ def main():
     print(f"  ? Validation: {validation_dir}/")
     if (validation_dir / "01_observed_geometry.csv").exists():
         print(f"  ? Biology report: {report_dir}/biological_evidence_report.md")
+    print(f"  ? Metrics: {metrics_dir}/")
+    print("\n" + "=" * 80)
+
+
+if __name__ == "__main__":
+    main()
