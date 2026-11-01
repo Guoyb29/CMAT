@@ -1,35 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-"""
-Quick start script for human oocyte maturation experiment (FGO -> MII).
-
-This script runs the complete CMAT pipeline for human oocyte maturation.
-
-Usage:
-    python run_human_experiment.py
-"""
-
-import subprocess
-import sys
-from pathlib import Path
-
-import yaml
-
-
-def run_command(cmd, description):
-    """Run a shell command and handle errors."""
-    print(f"\n{'='*80}")
-    print(f"{description}")
-    print(f"{'='*80}")
-    print(f"Command: {' '.join(cmd)}\n")
-    
-    result = subprocess.run(
-        cmd, cwd=Path(__file__).resolve().parent, capture_output=False, text=True
-    )
-    
-    if result.returncode != 0:
-        print(f"\n? Error: {description} failed!")
-        sys.exit(1)
     
     print(f"\n? {description} completed successfully.")
     return result
@@ -94,3 +62,67 @@ def main():
             "-m", "experiments.human_FGO_MII.generate_trajectories",
             "--input_h5ad", str(data_h5ad),
             "--fgo_embedding", str(fgo_emb),
+            "--mii_embedding", str(mii_emb),
+            "--output_dir", str(trajectory_dir),
+            "--n_steps_generate", "120",
+        ],
+        "[2/5] Generating continuous trajectories"
+    )
+
+    trajectory_file = trajectory_dir / "FGO_to_MII_trajectories.h5ad"
+
+    # Step 3: Validate endpoint
+    run_command(
+        [
+            sys.executable,
+            "-m", "experiments.human_FGO_MII.validate_endpoint",
+            "--trajectory", str(trajectory_file),
+            "--go1", str(go1_h5ad),
+            "--go2", str(go2_h5ad),
+            "--mi", str(mi_h5ad),
+            "--output-dir", str(validation_dir),
+        ],
+        "[3/5] Validating against intermediate stages (GO1/GO2/MI)"
+    )
+
+    # Step 4: Optional report from precomputed biological-analysis tables.
+    if (validation_dir / "01_observed_geometry.csv").exists():
+        run_command(
+            [
+                sys.executable,
+                "-m", "experiments.human_FGO_MII.biology_evidence_analysis",
+                "--out", str(validation_dir),
+                "--report-dir", str(report_dir),
+            ],
+            "[4/5] Biological evidence analysis (Figure 6e)"
+        )
+    else:
+        print("[4/5] Skipping optional biology report: precomputed tables are not present.")
+
+    # Step 5: Temporal alignment metrics
+    metrics_dir = output_dir / "temporal_metrics"
+    metrics_dir.mkdir(exist_ok=True)
+    
+    run_command(
+        [
+            sys.executable,
+            "-m", "evaluation.temporal_alignment",
+            "--trajectory-files", f"CMAT:{trajectory_file}",
+            "--early-batch", "FGO",
+            "--late-batch", "MII",
+            "--output-dir", str(metrics_dir),
+        ],
+        "[5/5] Computing temporal alignment metrics"
+    )
+
+    # Summary
+    print("\n" + "=" * 80)
+    print("? EXPERIMENT COMPLETED SUCCESSFULLY")
+    print("=" * 80)
+    print(f"\nResults directory: {output_dir}")
+    print("\nKey outputs:")
+    print(f"  ? Trained model: {alignment_dir}/")
+    print(f"  ? Trajectory: {trajectory_file}")
+    print(f"  ? Validation: {validation_dir}/")
+    if (validation_dir / "01_observed_geometry.csv").exists():
+        print(f"  ? Biology report: {report_dir}/biological_evidence_report.md")
